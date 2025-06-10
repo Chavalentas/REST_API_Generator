@@ -1,0 +1,187 @@
+<div class="formcontainer">
+  <mat-card id="generator-card">
+    <mat-card-title>
+      Generate a REST-API
+    </mat-card-title>
+    <mat-card-content>
+      <mat-horizontal-stepper [linear]="isLinear" #stepper>
+        <mat-step [stepControl]="firstFormGroup"  label="Fill out the database data">
+          <form [formGroup]="firstFormGroup">
+            <div>
+            <p>
+              <mat-form-field class="entry-field" appearance="fill">
+                 <mat-label>Select the database provider</mat-label>
+                 <mat-select [errorStateMatcher]="matcher" (selectionChange)="handleDbProviderSelectionChange($event)" disableRipple formControlName="dbProviderControl">
+                  <mat-option value="mssql">Microsoft SQL Server</mat-option>
+                  <mat-option value="postgres">PostgreSQL</mat-option>
+                </mat-select>
+                <mat-error *ngIf="firstFormGroup?.get('dbProviderControl')?.errors?.['required']">The database provider cannot be empty!</mat-error>
+              </mat-form-field>
+            </p>
+            <p>
+            <mat-form-field class="entry-field" appearance="fill">
+              <mat-label>Host name</mat-label>
+              <input [errorStateMatcher]="matcher" id="host-name-input" matInput type="text"  formControlName="hostNameControl" placeholder="Enter the host name..." required>
+              <mat-error *ngIf="firstFormGroup?.get('hostNameControl')?.errors?.['required']">The host name cannot be empty!</mat-error>
+              <mat-error *ngIf="firstFormGroup?.get('hostNameControl')?.errors?.['correctHostname']">The host name cannot contain the following characters(;=&)!</mat-error>
+            </mat-form-field>
+          </p>
+          <p>
+            <mat-form-field class="entry-field" appearance="fill">
+              <mat-label>Port</mat-label>
+              <input [errorStateMatcher]="matcher" id="port-input" matInput type="text"  formControlName="portControl" placeholder="Enter the port..." required>
+              <mat-error *ngIf="firstFormGroup?.get('portControl')?.errors?.['required']">The port cannot be empty!</mat-error>
+              <mat-error *ngIf="firstFormGroup?.get('portControl')?.errors?.['correctPort']">Wrong port was detected (0-65535)!</mat-error>
+            </mat-form-field>
+          </p>
+          <p>
+            <mat-form-field class="entry-field" appearance="fill">
+              <mat-label>User</mat-label>
+              <input [errorStateMatcher]="matcher" id="user-input" matInput type="text"  formControlName="userControl" placeholder="Enter the user..." required>
+              <mat-error *ngIf="firstFormGroup?.get('userControl')?.errors?.['required']">The user cannot be empty!</mat-error>
+              <mat-error *ngIf="firstFormGroup?.get('userControl')?.errors?.['correctUsername']">The user name cannot contain the following characters(;=&)!</mat-error>
+            </mat-form-field>
+          </p>
+          <p>
+            <mat-form-field class="entry-field" appearance="fill">
+              <mat-label>Password</mat-label>
+              <input [errorStateMatcher]="matcher" id="password-input" matInput type="password"  formControlName="passwordControl" placeholder="Enter the password..." required>
+              <mat-error *ngIf="firstFormGroup?.get('passwordControl')?.errors?.['required']">The password cannot be empty!</mat-error>
+              <mat-error *ngIf="firstFormGroup?.get('passwordControl')?.errors?.['correctPassword']">The password cannot contain the following characters(;=&)!</mat-error>
+            </mat-form-field>
+          </p>
+          <p>
+            <mat-form-field class="entry-field" appearance="fill">
+              <mat-label>Database</mat-label>
+              <input [errorStateMatcher]="matcher" id="database-input" matInput type="text"  formControlName="databaseControl" placeholder="Enter the database..." required>
+              <mat-error *ngIf="firstFormGroup?.get('databaseControl')?.errors?.['required']">The database cannot be empty!</mat-error>
+              <mat-error *ngIf="firstFormGroup?.get('databaseControl')?.errors?.['correctDatabase']">The database cannot contain the following characters(;=&)!</mat-error>
+            </mat-form-field>
+          </p>
+        </div>
+        </form>
+          <div *ngIf="loading" class="spinner">
+            <mat-spinner  diameter="50"></mat-spinner>
+          </div>
+          <div class="success-message">
+              {{firstStepSuccessMessage}}
+          </div>
+          <button  class="buttons" mat-raised-button color="black" (click)="handleDatabaseConfigNextButtonClick()">Next</button>
+        </mat-step>
+        <mat-step [stepControl]="secondFormGroup" label="Select the schema">
+          <form [formGroup]="secondFormGroup">
+            <div *ngIf="schemas.length > 0">
+              <mat-action-list class="selection-list">
+                <button *ngFor="let schema of schemas"  mat-list-item (click)="handleSchemaClick(schema)">{{schema.schemaName}}</button>
+              </mat-action-list>
+              <label *ngIf="secondFormGroup.get('schemaNameControl')?.errors?.['required']">No schema name was selected!</label>
+              <label *ngIf="secondFormGroup.valid">Selected schema: {{selectedSchema.schemaName}}</label>
+            </div>
+            <div *ngIf="schemas.length == 0">
+              <label>No schemas could be found!</label>
+            </div>
+          </form>
+          <div *ngIf="loading" class="spinner">
+            <mat-spinner  diameter="50"></mat-spinner>
+          </div>
+          <div class="success-message">
+              {{secondStepSuccessMessage}}
+          </div>
+          <button  matStepperPrevious class="buttons" mat-raised-button color="black">Back</button>
+          <button (click)="handleSelectSchemaNextButtonClick()" class="buttons" mat-raised-button color="black">Next</button>
+          <button class="buttons" mat-raised-button color="black" (click)="handleSchemasRefreshButtonClick()"><span class="material-icons">refresh</span></button>
+        </mat-step>
+        <mat-step [stepControl]="thirdFormGroup" label="Select the database object type">
+          <form id="db-object-type-form-control" [formGroup]="thirdFormGroup">
+            <div>
+            <mat-radio-group (change)="handleDbObjectTypeSelectionChange($event)" aria-label="Select an option" formControlName="dbObjectTypeControl">
+              <p><mat-radio-button value="table">Table</mat-radio-button></p>
+              <p><mat-radio-button value="view">View</mat-radio-button></p>
+              <p><mat-radio-button value="function">Function</mat-radio-button></p>
+              <p><mat-radio-button value="strp">Stored Procedure</mat-radio-button></p>
+            </mat-radio-group>
+            <label *ngIf="thirdFormGroup.get('dbObjectTypeControl')?.errors?.['required']">No database object type was selected!</label>
+          </div>
+          </form>
+          <div *ngIf="loading" class="spinner">
+            <mat-spinner  diameter="50"></mat-spinner>
+          </div>
+          <div class="success-message">
+            {{thirdStepSuccessMessage}}
+          </div>
+          <button matStepperPrevious  class="buttons" mat-raised-button color="black">Back</button>
+          <button  class="buttons" mat-raised-button color="black" (click)="handleSelectDbObjectTypeNextButtonClick()">Next</button>
+        </mat-step>
+        <mat-step [stepControl]="fourthFormGroup" label="Select the object">
+          <form [formGroup]="fourthFormGroup">
+            <div *ngIf="dbObjects.length > 0">
+              <mat-action-list class="selection-list">
+                <button *ngFor="let object of dbObjects"  mat-list-item (click)="handleDbObjectClick(object)">{{object.dbObjectName}}</button>
+              </mat-action-list>
+              <label *ngIf="fourthFormGroup.get('dbObjectControl')?.errors?.['required']">No database object was selected!</label>
+              <label *ngIf="fourthFormGroup.valid">Selected database object: {{selectedDbObject.dbObjectName}}</label>
+            </div>
+            <div *ngIf="dbObjects.length == 0">
+              <label>No database objects of the given type could be found!</label>
+            </div>
+          </form>
+          <div *ngIf="loading" class="spinner">
+            <mat-spinner  diameter="50"></mat-spinner>
+          </div>
+          <div class="success-message">
+            {{fourthStepSuccessMessage}}
+          </div>
+          <button  matStepperPrevious class="buttons" mat-raised-button color="black">Back</button>
+          <button  class="buttons" mat-raised-button color="black" (click)="handleSelectObjectNextButtonClick()">Next</button>
+          <button class="buttons" mat-raised-button color="black" (click)="handleDbObjectsRefreshButtonClick()"><span class="material-icons">refresh</span></button>
+        </mat-step>
+        <mat-step [stepControl]="fifthFormGroup" label="Enter the name of the REST-API">
+          <form id="rest-api-name-form-control" [formGroup]="fifthFormGroup">
+            <div>
+            <p>
+            <mat-form-field id="rest-api-name-formfield" class="rest-api-name-entry-field" appearance="fill">
+              <mat-label>REST-API name</mat-label>
+              <input [errorStateMatcher]="matcher" id="rest-api-input" matInput type="text"  formControlName="restApiNameControl" placeholder="Enter the name of the REST-API..." required>
+              <mat-error *ngIf="fifthFormGroup?.get('restApiNameControl')?.errors?.['required']">The REST-API name cannot be empty!</mat-error>
+            </mat-form-field>
+          </p>
+           </div>
+          </form>
+          <div *ngIf="loading" class="spinner">
+              <mat-spinner  diameter="50"></mat-spinner>
+          </div>
+          <div class="success-message">
+              {{fifthStepSuccessMessage}}
+          </div>
+          <button matStepperPrevious  class="buttons" mat-raised-button color="black">Back</button>
+          <button  class="buttons" mat-raised-button color="black" (click)="handleEnterRestApiNameNextButtonClick()">Next</button>
+        </mat-step>
+        <mat-step [stepControl]="sixthFormGroup" label="Get the configuration">
+          <form [formGroup]="sixthFormGroup">
+            <div class="configuration-container">
+              <mat-form-field id="config-area-formfield" class="example-full-width" appearance="fill">
+                <mat-label>JSON configuration</mat-label>
+                <textarea readonly id="config-area" formControlName="configurationControl" matInput></textarea>
+              </mat-form-field>
+              <div class="configuration-buttons-container">
+                <button [cdkCopyToClipboard]="sixthFormGroup.get('configurationControl')?.value"  class="config-buttons" mat-raised-button color="black">Copy to clipboard</button>
+                <div id="offset-container">
+                   <label id="or-label">OR</label>
+                </div>
+                <button class="config-buttons" mat-raised-button color="black" (click)="handleImportToNodeRedButtonClick()">Import to Node-RED</button>
+              </div>
+            </div>
+          </form>
+          <div *ngIf="loading" class="spinner">
+            <mat-spinner  diameter="50"></mat-spinner>
+          </div>
+          <div class="success-message">
+            {{sixthStepSuccessMessage}}
+          </div>
+          <button  matStepperPrevious class="buttons" mat-raised-button color="black">Back</button>
+          <button  (click)="stepper.reset()" class="buttons" mat-raised-button color="black">Reset</button>
+        </mat-step>
+      </mat-horizontal-stepper>
+    </mat-card-content>
+  </mat-card>
+</div>

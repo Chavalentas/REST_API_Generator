@@ -1,0 +1,686 @@
+[
+    {
+        "id": "fe88eccb3d6b7d47",
+        "type": "tab",
+        "label": "mssql-view"
+    },
+    {
+        "id": "w06glhkbbl3741k8",
+        "type": "comment",
+        "z": "fe88eccb3d6b7d47",
+        "name": "mssql-view",
+        "info": "",
+        "x": 450,
+        "y": 140,
+        "wires": []
+    },
+    {
+        "id": "1d30bc3a9149m2fr",
+        "type": "comment",
+        "z": "fe88eccb3d6b7d47",
+        "name": "This subflow catches the errors",
+        "info": "",
+        "x": 450,
+        "y": 240,
+        "wires": []
+    },
+    {
+        "id": "78d19w14wjn0p37p",
+        "type": "comment",
+        "z": "fe88eccb3d6b7d47",
+        "name": "GetEndPoint (view attributes are query parameters)",
+        "info": "",
+        "x": 450,
+        "y": 390,
+        "wires": []
+    },
+    {
+        "id": "i639k5l3l1chjz2y",
+        "type": "comment",
+        "z": "fe88eccb3d6b7d47",
+        "name": "PostEndPoint (request body contains the attributes of the view, no request parameters)",
+        "info": "",
+        "x": 450,
+        "y": 540,
+        "wires": []
+    },
+    {
+        "id": "0a5hicyofu7o3qca",
+        "type": "comment",
+        "z": "fe88eccb3d6b7d47",
+        "name": "PutEndPoint (request body contains the attributes of the view, request parameters the primary key)",
+        "info": "",
+        "x": 450,
+        "y": 690,
+        "wires": []
+    },
+    {
+        "id": "jr3b3a1q46ujt6ed",
+        "type": "comment",
+        "z": "fe88eccb3d6b7d47",
+        "name": "DeleteEndPoint (no request body, request parameters contain the primary key)",
+        "info": "",
+        "x": 450,
+        "y": 840,
+        "wires": []
+    },
+    {
+        "id": "7142zm94at469m65",
+        "type": "comment",
+        "z": "fe88eccb3d6b7d47",
+        "name": "DeleteEndPoint (view attributes are query parameters)",
+        "info": "",
+        "x": 450,
+        "y": 990,
+        "wires": []
+    },
+    {
+        "id": "70jcg715h7belbpl",
+        "type": "catch",
+        "z": "fe88eccb3d6b7d47",
+        "name": "",
+        "scope": null,
+        "uncaught": false,
+        "x": 150,
+        "y": 290,
+        "wires": [
+            [
+                "g845oh0u27oaudg1"
+            ]
+        ]
+    },
+    {
+        "id": "g845oh0u27oaudg1",
+        "type": "function",
+        "z": "fe88eccb3d6b7d47",
+        "name": "CreateError",
+        "func": "// Store the error message \n// in the payload property.\nmsg.payload = {\n    \"error\": msg.error.message\n}\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 400,
+        "y": 290,
+        "wires": [
+            [
+                "39w48vx3po0zqx00"
+            ]
+        ]
+    },
+    {
+        "id": "39w48vx3po0zqx00",
+        "type": "http response",
+        "z": "fe88eccb3d6b7d47",
+        "name": "",
+        "statusCode": 400,
+        "headers": {},
+        "x": 650,
+        "y": 290,
+        "wires": []
+    },
+    {
+        "id": "q6e9209graid2112",
+        "type": "http in",
+        "z": "fe88eccb3d6b7d47",
+        "name": "",
+        "url": "/dbo.housesview",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 150,
+        "y": 440,
+        "wires": [
+            [
+                "0pty0u763icazywl"
+            ]
+        ]
+    },
+    {
+        "id": "0pty0u763icazywl",
+        "type": "function",
+        "z": "fe88eccb3d6b7d47",
+        "name": "SetQueryParameters",
+        "func": "msg.queryProperties = [];\nvar properties = [\"houseid\",\"housename\"];\nvar queryProperties = Object.getOwnPropertyNames(msg.req.query);\n\nif (queryProperties.some(p => !properties.some(p1 => p1 == p))){\n    throw new Error(\"Invalid query property detected!\");\n}\n\nif (queryProperties.some(p => !properties.some(p1 => p1 == p))){\n    throw new Error(\"Invalid query property detected!\");\n}\n\nif (msg.req.query.houseid !== undefined){\n    msg.queryProperties.push({\"propertyName\": \"houseid\", \"propertyValue\": `${msg.req.query.houseid}`});\n}\n\nif (msg.req.query.housename !== undefined){\n    msg.queryProperties.push({\"propertyName\": \"housename\", \"propertyValue\": `${msg.req.query.housename}`});\n}\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 450,
+        "y": 440,
+        "wires": [
+            [
+                "07g4p0341b808v2k"
+            ]
+        ]
+    },
+    {
+        "id": "07g4p0341b808v2k",
+        "type": "function",
+        "z": "fe88eccb3d6b7d47",
+        "name": "CreateSelectQuery",
+        "func": "var selectQuery = \"SELECT * FROM dbo.housesview\";\nvar equations = [];\n\nif (msg.queryProperties.length > 0){\n    for (let i = 0; i < msg.queryProperties.length; i++){\n        let equation = \"\";\n        \n        if (msg.queryProperties[i].propertyValue === \"null\"){\n            equation = `${msg.queryProperties[i].propertyName} is ${msg.queryProperties[i].propertyValue}`;\n        } else {\n            equation = \n            `CONVERT(VARCHAR, ${msg.queryProperties[i].propertyName}) = '${msg.queryProperties[i].propertyValue}'`;\n        }\n        \n        equations.push(equation);\n    }\n    \n    var equationsJoined = equations.join(\" AND \");\n    selectQuery += \" WHERE \";\n    selectQuery += `${equationsJoined}`;\n}\n\nselectQuery += \";\";\nmsg.query = selectQuery;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 750,
+        "y": 440,
+        "wires": [
+            [
+                "qfvy7jm1vt70hv5x"
+            ]
+        ]
+    },
+    {
+        "id": "qfvy7jm1vt70hv5x",
+        "type": "MSSQL",
+        "z": "fe88eccb3d6b7d47",
+        "mssqlCN": "7e5j935l920n0t1a",
+        "name": "Query",
+        "outField": "payload",
+        "returnType": 0,
+        "throwErrors": 1,
+        "query": "",
+        "modeOpt": "queryMode",
+        "modeOptType": "query",
+        "queryOpt": "query",
+        "queryOptType": "msg",
+        "paramsOpt": "queryParams",
+        "paramsOptType": "none",
+        "rows": "rows",
+        "rowsType": "msg",
+        "parseMustache": true,
+        "params": [],
+        "x": 1050,
+        "y": 440,
+        "wires": [
+            [
+                "08tt8i5414akf76p"
+            ]
+        ]
+    },
+    {
+        "id": "08tt8i5414akf76p",
+        "type": "function",
+        "z": "fe88eccb3d6b7d47",
+        "name": "SetResponse",
+        "func": "var response = msg.payload;\nmsg.payload = {\n  \"result\": response  \n};\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1350,
+        "y": 440,
+        "wires": [
+            [
+                "ex6ic00e3g9ho549"
+            ]
+        ]
+    },
+    {
+        "id": "ex6ic00e3g9ho549",
+        "type": "http response",
+        "z": "fe88eccb3d6b7d47",
+        "name": "",
+        "statusCode": 200,
+        "headers": {},
+        "x": 1650,
+        "y": 440,
+        "wires": []
+    },
+    {
+        "id": "32s9kpxr8ws9v5ac",
+        "type": "http in",
+        "z": "fe88eccb3d6b7d47",
+        "name": "",
+        "url": "/dbo.housesview",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 150,
+        "y": 590,
+        "wires": [
+            [
+                "06r7n7w8o7wzbtnn"
+            ]
+        ]
+    },
+    {
+        "id": "06r7n7w8o7wzbtnn",
+        "type": "function",
+        "z": "fe88eccb3d6b7d47",
+        "name": "SetQueryParameters",
+        "func": "msg.queryProperties = [];\nvar properties = [\"houseid\",\"housename\"];\nvar queryPropertyNames = Object.getOwnPropertyNames(msg.req.body);\n\nif (queryPropertyNames.some(p => !properties.some(p1 => p1 == p))) {\n    throw new Error(\"Invalid query property detected!\");\n}\n\nif (msg.req.body.houseid !== undefined){\n    msg.queryProperties.push({ \"propertyName\": \"houseid\", \"propertyValue\": `${msg.req.body.houseid}` })\n}\n\nif (msg.req.body.housename !== undefined){\n    msg.queryProperties.push({ \"propertyName\": \"housename\", \"propertyValue\": `${msg.req.body.housename}` })\n}\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 450,
+        "y": 590,
+        "wires": [
+            [
+                "952qui871u7chsu0"
+            ]
+        ]
+    },
+    {
+        "id": "952qui871u7chsu0",
+        "type": "function",
+        "z": "fe88eccb3d6b7d47",
+        "name": "CreateInsertQuery",
+        "func": "var insertQuery = \"INSERT INTO dbo.housesview\";\nvar propertyNames = msg.queryProperties.map(p => p.propertyName);\nvar propertyValues = [];\n\nfor (let i = 0; i < msg.queryProperties.length; i++){\n    if (msg.queryProperties[i].propertyValue === \"null\"){\n        propertyValues.push(msg.queryProperties[i].propertyValue);\n    } else{\n        propertyValues.push(`'${msg.queryProperties[i].propertyValue}'`);\n    }\n}\n\nvar propertyNamesJoined = propertyNames.join(\",\");\nvar propertyValuesJoined = propertyValues.join(\",\");\ninsertQuery += `(${propertyNamesJoined})`;\ninsertQuery += \" VALUES \";\ninsertQuery += `(${propertyValuesJoined})`;\ninsertQuery += \";\";\nconsole.log(insertQuery);\nmsg.query = insertQuery;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 750,
+        "y": 590,
+        "wires": [
+            [
+                "9zg4ri792r8x2x77"
+            ]
+        ]
+    },
+    {
+        "id": "9zg4ri792r8x2x77",
+        "type": "MSSQL",
+        "z": "fe88eccb3d6b7d47",
+        "mssqlCN": "7e5j935l920n0t1a",
+        "name": "Query",
+        "outField": "payload",
+        "returnType": 0,
+        "throwErrors": 1,
+        "query": "",
+        "modeOpt": "queryMode",
+        "modeOptType": "query",
+        "queryOpt": "query",
+        "queryOptType": "msg",
+        "paramsOpt": "queryParams",
+        "paramsOptType": "none",
+        "rows": "rows",
+        "rowsType": "msg",
+        "parseMustache": true,
+        "params": [],
+        "x": 1050,
+        "y": 590,
+        "wires": [
+            [
+                "7hlva67i0d1e71g0"
+            ]
+        ]
+    },
+    {
+        "id": "7hlva67i0d1e71g0",
+        "type": "function",
+        "z": "fe88eccb3d6b7d47",
+        "name": "SetResponse",
+        "func": "msg.payload = undefined;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1350,
+        "y": 590,
+        "wires": [
+            [
+                "tfo099gz495443dy"
+            ]
+        ]
+    },
+    {
+        "id": "tfo099gz495443dy",
+        "type": "http response",
+        "z": "fe88eccb3d6b7d47",
+        "name": "",
+        "statusCode": 201,
+        "headers": {},
+        "x": 1650,
+        "y": 590,
+        "wires": []
+    },
+    {
+        "id": "my7600wo096f2a67",
+        "type": "http in",
+        "z": "fe88eccb3d6b7d47",
+        "name": "",
+        "url": "/dbo.housesview/:houseid",
+        "method": "put",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 150,
+        "y": 740,
+        "wires": [
+            [
+                "66g6owr1z7y6yc6r"
+            ]
+        ]
+    },
+    {
+        "id": "66g6owr1z7y6yc6r",
+        "type": "function",
+        "z": "fe88eccb3d6b7d47",
+        "name": "SetQueryParameters",
+        "func": "msg.queryProperties = [];\nvar properties = [\"houseid\",\"housename\"];\nvar queryPropertyNames = Object.getOwnPropertyNames(msg.req.body);\n\nif (msg.req.params.houseid === undefined){\n    throw new Error(\"The query parameter \\'houseid\\' was undefined!\");\n}\n\nif (queryPropertyNames.some(p => !properties.some(p1 => p1 == p))) {\n    throw new Error(\"Invalid query property detected!\");\n}\n\nmsg.pk = {\"propertyName\": \"houseid\", \"propertyValue\": msg.req.params.houseid};\n\nif (msg.req.body.houseid !== undefined){\n    msg.queryProperties.push({ \"propertyName\": \"houseid\", \"propertyValue\": `${msg.req.body.houseid}` })\n}\n\nif (msg.req.body.housename !== undefined){\n    msg.queryProperties.push({ \"propertyName\": \"housename\", \"propertyValue\": `${msg.req.body.housename}` })\n}\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 450,
+        "y": 740,
+        "wires": [
+            [
+                "589308hp88257889"
+            ]
+        ]
+    },
+    {
+        "id": "589308hp88257889",
+        "type": "function",
+        "z": "fe88eccb3d6b7d47",
+        "name": "CreateUpdateQuery",
+        "func": "var propertyNames = msg.queryProperties.map(p => p.propertyName);\nvar propertyValues = msg.queryProperties.map(p => p.propertyValue);\nvar equations = [];\n\nfor (let i = 0; i < propertyNames.length; i++){\n    var propertyValue = \"\";\n\n    if (propertyValues[i] === \"null\"){\n        propertyValue = propertyValues[i];\n    } else{\n        propertyValue = `'${propertyValues[i]}'`;\n    }\n\n    var equation = `${propertyNames[i]} = ${propertyValue}`;\n    equations.push(equation);\n}\n\nvar pk = \"\";\n\nif (msg.pk.propertyValue === \"null\"){\n    pk = msg.pk.propertyValue;\n} else{\n    pk = `'${msg.pk.propertyValue}'`;\n}\n\nvar equationsJoined = equations.join(\",\");\nvar updateQuery = `UPDATE dbo.housesview SET ${equationsJoined} WHERE ${msg.pk.propertyName} = ${pk};`;\nmsg.query = updateQuery;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 750,
+        "y": 740,
+        "wires": [
+            [
+                "28m899whve2190he"
+            ]
+        ]
+    },
+    {
+        "id": "28m899whve2190he",
+        "type": "MSSQL",
+        "z": "fe88eccb3d6b7d47",
+        "mssqlCN": "7e5j935l920n0t1a",
+        "name": "Query",
+        "outField": "payload",
+        "returnType": 0,
+        "throwErrors": 1,
+        "query": "",
+        "modeOpt": "queryMode",
+        "modeOptType": "query",
+        "queryOpt": "query",
+        "queryOptType": "msg",
+        "paramsOpt": "queryParams",
+        "paramsOptType": "none",
+        "rows": "rows",
+        "rowsType": "msg",
+        "parseMustache": true,
+        "params": [],
+        "x": 1050,
+        "y": 740,
+        "wires": [
+            [
+                "45n57imd26d79z3o"
+            ]
+        ]
+    },
+    {
+        "id": "45n57imd26d79z3o",
+        "type": "function",
+        "z": "fe88eccb3d6b7d47",
+        "name": "SetResponse",
+        "func": "msg.payload = undefined;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1350,
+        "y": 740,
+        "wires": [
+            [
+                "p8l771s0eu222465"
+            ]
+        ]
+    },
+    {
+        "id": "p8l771s0eu222465",
+        "type": "http response",
+        "z": "fe88eccb3d6b7d47",
+        "name": "",
+        "statusCode": 200,
+        "headers": {},
+        "x": 1650,
+        "y": 740,
+        "wires": []
+    },
+    {
+        "id": "l40plsu07721oxt5",
+        "type": "http in",
+        "z": "fe88eccb3d6b7d47",
+        "name": "",
+        "url": "/dbo.housesview/:houseid",
+        "method": "delete",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 150,
+        "y": 890,
+        "wires": [
+            [
+                "c0w8y7zh26q94231"
+            ]
+        ]
+    },
+    {
+        "id": "c0w8y7zh26q94231",
+        "type": "function",
+        "z": "fe88eccb3d6b7d47",
+        "name": "SetQueryParameters",
+        "func": "if (msg.req.params.houseid === undefined){\n    throw new Error(\"The query parameter \\'houseid\\' was undefined!\");\n}\n\nvar pkValue = \"\";\n\nif (msg.req.params.houseid === \"null\"){\n    pkValue = null;\n} else{\n    pkValue = msg.req.params.houseid;\n}\n\nvar data = {\n    pk: pkValue\n};\n\nmsg.queryParameters = data;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 450,
+        "y": 890,
+        "wires": [
+            [
+                "87x366f08e543k9h"
+            ]
+        ]
+    },
+    {
+        "id": "87x366f08e543k9h",
+        "type": "MSSQL",
+        "z": "fe88eccb3d6b7d47",
+        "mssqlCN": "7e5j935l920n0t1a",
+        "name": "Query",
+        "outField": "payload",
+        "returnType": 0,
+        "throwErrors": 1,
+        "query": "DELETE FROM dbo.housesview WHERE houseid='{{{queryParameters.pk}}}';",
+        "modeOpt": "queryMode",
+        "modeOptType": "query",
+        "queryOpt": "",
+        "queryOptType": "editor",
+        "paramsOpt": "queryParams",
+        "paramsOptType": "none",
+        "rows": "rows",
+        "rowsType": "msg",
+        "parseMustache": true,
+        "params": [],
+        "x": 750,
+        "y": 890,
+        "wires": [
+            [
+                "viycq0qc041649z1"
+            ]
+        ]
+    },
+    {
+        "id": "viycq0qc041649z1",
+        "type": "function",
+        "z": "fe88eccb3d6b7d47",
+        "name": "SetResponse",
+        "func": "msg.payload = undefined;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1050,
+        "y": 890,
+        "wires": [
+            [
+                "9jgav4rq2x7a1mls"
+            ]
+        ]
+    },
+    {
+        "id": "9jgav4rq2x7a1mls",
+        "type": "http response",
+        "z": "fe88eccb3d6b7d47",
+        "name": "",
+        "statusCode": 200,
+        "headers": {},
+        "x": 1350,
+        "y": 890,
+        "wires": []
+    },
+    {
+        "id": "4ducj1w7ard9pm68",
+        "type": "http in",
+        "z": "fe88eccb3d6b7d47",
+        "name": "",
+        "url": "/dbo.housesview",
+        "method": "delete",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 150,
+        "y": 1040,
+        "wires": [
+            [
+                "8v11bt79ll1m4sy9"
+            ]
+        ]
+    },
+    {
+        "id": "8v11bt79ll1m4sy9",
+        "type": "function",
+        "z": "fe88eccb3d6b7d47",
+        "name": "SetQueryParameters",
+        "func": "msg.queryProperties = [];\nvar properties = [\"houseid\",\"housename\"];\nvar queryProperties = Object.getOwnPropertyNames(msg.req.query);\n\nif (queryProperties.some(p => !properties.some(p1 => p1 == p))){\n    throw new Error(\"Invalid query property detected!\");\n}\n\nif (queryProperties.some(p => !properties.some(p1 => p1 == p))){\n    throw new Error(\"Invalid query property detected!\");\n}\n\nif (msg.req.query.houseid !== undefined){\n    msg.queryProperties.push({\"propertyName\": \"houseid\", \"propertyValue\": `${msg.req.query.houseid}`});\n}\n\nif (msg.req.query.housename !== undefined){\n    msg.queryProperties.push({\"propertyName\": \"housename\", \"propertyValue\": `${msg.req.query.housename}`});\n}\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 450,
+        "y": 1040,
+        "wires": [
+            [
+                "68fcd22qofa57zj6"
+            ]
+        ]
+    },
+    {
+        "id": "68fcd22qofa57zj6",
+        "type": "function",
+        "z": "fe88eccb3d6b7d47",
+        "name": "CreateDeleteQuery",
+        "func": "var deleteQuery = \"DELETE FROM dbo.housesview\";\nvar equations = [];\n\nif (msg.queryProperties.length > 0){\n    for (let i = 0; i < msg.queryProperties.length; i++){\n        let equation = \"\";\n\n        if (msg.queryProperties[i].propertyValue === \"null\") {\n            equation = `${msg.queryProperties[i].propertyName} is ${msg.queryProperties[i].propertyValue}`;\n        } else {\n            equation = `CONVERT(VARCHAR, ${msg.queryProperties[i].propertyName}) = '${msg.queryProperties[i].propertyValue}'`;\n        }\n\n        equations.push(equation);\n    }\n    \n    var equationsJoined = equations.join(\" AND \");\n    deleteQuery += \" WHERE \";\n    deleteQuery += `${equationsJoined}`;\n}\n\ndeleteQuery += \";\";\nmsg.query = deleteQuery;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 750,
+        "y": 1040,
+        "wires": [
+            [
+                "f15002uh86x9i7g5"
+            ]
+        ]
+    },
+    {
+        "id": "f15002uh86x9i7g5",
+        "type": "MSSQL",
+        "z": "fe88eccb3d6b7d47",
+        "mssqlCN": "7e5j935l920n0t1a",
+        "name": "Query",
+        "outField": "payload",
+        "returnType": 0,
+        "throwErrors": 1,
+        "query": "",
+        "modeOpt": "queryMode",
+        "modeOptType": "query",
+        "queryOpt": "query",
+        "queryOptType": "msg",
+        "paramsOpt": "queryParams",
+        "paramsOptType": "none",
+        "rows": "rows",
+        "rowsType": "msg",
+        "parseMustache": true,
+        "params": [],
+        "x": 1050,
+        "y": 1040,
+        "wires": [
+            [
+                "r96y0w1ngwm89o15"
+            ]
+        ]
+    },
+    {
+        "id": "r96y0w1ngwm89o15",
+        "type": "function",
+        "z": "fe88eccb3d6b7d47",
+        "name": "SetResponse",
+        "func": "msg.payload = undefined;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1350,
+        "y": 1040,
+        "wires": [
+            [
+                "z1ly7t2l6c1y03h3"
+            ]
+        ]
+    },
+    {
+        "id": "z1ly7t2l6c1y03h3",
+        "type": "http response",
+        "z": "fe88eccb3d6b7d47",
+        "name": "",
+        "statusCode": 200,
+        "headers": {},
+        "x": 1650,
+        "y": 1040,
+        "wires": []
+    },
+    {
+        "id": "7e5j935l920n0t1a",
+        "type": "MSSQL-CN",
+        "z": "fe88eccb3d6b7d47",
+        "name": "",
+        "server": "localhost",
+        "port": "79",
+        "encyption": false,
+        "trustServerCertificate": false,
+        "database": "master",
+        "useUTC": false,
+        "connectTimeout": "",
+        "requestTimeout": "",
+        "cancelTimeout": "",
+        "pool": "",
+        "parseJSON": false,
+        "enableArithAbort": true
+    }
+]

@@ -1,0 +1,123 @@
+.mat-black {
+  background-color: black;
+  color: #fff;
+}
+
+.entry-field{
+  margin-left: 10px;
+  margin-right: 10px;
+}
+
+.buttons{
+  margin-left: 10px;
+  margin-right: 10px;
+}
+
+.formcontainer{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  background: black;
+}
+
+.selection-list{
+  max-height: 32.5em;
+  overflow: auto;
+}
+
+.success-message{
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.spinner{
+  display: flex;
+  justify-content: center;
+}
+
+.selection-list button.mat-list-item{
+  height: 2em;
+}
+
+.configuration-container{
+  display: flex;
+  flex-direction: row;
+}
+
+.configuration-buttons-container{
+  display: flex;
+  flex-direction: column;
+}
+
+.config-buttons{
+  margin-top: 10px;
+  margin-left: 10px;
+}
+
+.entry-field{
+  width: 25%;
+}
+
+::ng-deep .mat-horizontal-stepper-header{
+  pointer-events: none !important;
+  align-items: center;
+}
+
+::ng-deep .mat-card{
+  border-radius: 0px !important;
+ }
+
+#config-area{
+  max-height: 25em;
+  min-height: 6.25em;
+}
+
+#config-area-formfield{
+  width: 50%;
+  height: 50%;
+}
+
+#offset-container{
+  position: relative;
+  width: 100%;
+  height: 3.125em;
+}
+
+#or-label{
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+#generator-card{
+  position: fixed;
+  top: 0px;
+  bottom: 0px;
+  left: 0px;
+  right: 0px;
+}
+
+#logo-picture{
+  position: absolute;
+  top: 16px;
+  right: 40px;
+  width: 10%;
+  height: 10%;
+  object-fit: cover;
+}
+
+#rest-api-name-formfield{
+  width: 25%;
+}
+
+#db-object-type-form-control{
+  margin-top: 15%;
+}
+
+#rest-api-name-form-control{
+  margin-top: 15%;
+}

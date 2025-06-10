@@ -1,0 +1,211 @@
+[
+    {
+        "id": "bfd7db6d64b708fd",
+        "type": "tab",
+        "label": "postgres-strp"
+    },
+    {
+        "id": "34iz4ji6vjxjxk0p",
+        "type": "comment",
+        "z": "bfd7db6d64b708fd",
+        "name": "postgres-strp",
+        "info": "",
+        "x": 450,
+        "y": 140,
+        "wires": []
+    },
+    {
+        "id": "h1xp8s314s6zhupb",
+        "type": "comment",
+        "z": "bfd7db6d64b708fd",
+        "name": "This subflow catches the errors",
+        "info": "",
+        "x": 450,
+        "y": 240,
+        "wires": []
+    },
+    {
+        "id": "qr458r4o9amumdq9",
+        "type": "comment",
+        "z": "bfd7db6d64b708fd",
+        "name": "GetEndPoint (procedure parameters are query parameters)",
+        "info": "",
+        "x": 450,
+        "y": 390,
+        "wires": []
+    },
+    {
+        "id": "53mp5625thihhi87",
+        "type": "catch",
+        "z": "bfd7db6d64b708fd",
+        "name": "",
+        "scope": null,
+        "uncaught": false,
+        "x": 150,
+        "y": 290,
+        "wires": [
+            [
+                "a6nptl6782p2179g"
+            ]
+        ]
+    },
+    {
+        "id": "a6nptl6782p2179g",
+        "type": "function",
+        "z": "bfd7db6d64b708fd",
+        "name": "CreateError",
+        "func": "// Store the error message \n// in the payload property.\nmsg.payload = {\n    \"error\": msg.error.message\n}\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 400,
+        "y": 290,
+        "wires": [
+            [
+                "21k34s83vc409kg0"
+            ]
+        ]
+    },
+    {
+        "id": "21k34s83vc409kg0",
+        "type": "http response",
+        "z": "bfd7db6d64b708fd",
+        "name": "",
+        "statusCode": 400,
+        "headers": {},
+        "x": 650,
+        "y": 290,
+        "wires": []
+    },
+    {
+        "id": "435a7w78a7200sw2",
+        "type": "http in",
+        "z": "bfd7db6d64b708fd",
+        "name": "",
+        "url": "/public.count_procedure3",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 150,
+        "y": 440,
+        "wires": [
+            [
+                "mh6061878xim8m1t"
+            ]
+        ]
+    },
+    {
+        "id": "mh6061878xim8m1t",
+        "type": "function",
+        "z": "bfd7db6d64b708fd",
+        "name": "CheckProcedureParameters",
+        "func": "var queryParameters = Object.getOwnPropertyNames(msg.req.query);\n\nif (queryParameters.some(p => p != \"param\")) {\n    throw new Error(\"Invalid query parameter detected!\");\n}\n\nif (msg.req.query.param === undefined) {\n    throw new Error(\"The parameters were not defined!\");\n}\n\nmsg.procedureParameters = [];\nvar params = msg.req.query.param;\n\nfor (let i = 0; i < params.length; i++) {\n    msg.procedureParameters.push(params[i]);\n}\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 450,
+        "y": 440,
+        "wires": [
+            [
+                "ym7e7d815n81594t"
+            ]
+        ]
+    },
+    {
+        "id": "ym7e7d815n81594t",
+        "type": "function",
+        "z": "bfd7db6d64b708fd",
+        "name": "CreateProcedureQuery",
+        "func": "var callProcedureQuery = \"CALL public.count_procedure3(\";\nvar queryParams = [];\n\nfor (let i = 0; i < msg.procedureParameters.length; i++){\n    if (msg.procedureParameters[i] === \"default\"){\n        continue;\n    }\n\n    if (msg.procedureParameters[i] === \"null\"){\n        queryParams.push(msg.procedureParameters[i]);\n        continue;\n    }\n  \n    queryParams.push(`'${msg.procedureParameters[i]}'`);\n}\n\ncallProcedureQuery += queryParams.join(\",\");\ncallProcedureQuery += \");\";\nmsg.query = callProcedureQuery;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 750,
+        "y": 440,
+        "wires": [
+            [
+                "k2dcj3712s2mb96e"
+            ]
+        ]
+    },
+    {
+        "id": "k2dcj3712s2mb96e",
+        "type": "postgresql",
+        "z": "bfd7db6d64b708fd",
+        "name": "Query",
+        "query": "",
+        "postgreSQLConfig": "679y3eg65joiv338",
+        "split": false,
+        "rowsPerMsg": 1,
+        "outputs": 1,
+        "x": 1050,
+        "y": 440,
+        "wires": [
+            [
+                "0923258395d1b37b"
+            ]
+        ]
+    },
+    {
+        "id": "0923258395d1b37b",
+        "type": "function",
+        "z": "bfd7db6d64b708fd",
+        "name": "SetResponse",
+        "func": "var response = msg.payload;\nmsg.payload = {\n  \"result\": response  \n};\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1350,
+        "y": 440,
+        "wires": [
+            [
+                "2pfkf0zf2u90hn7f"
+            ]
+        ]
+    },
+    {
+        "id": "2pfkf0zf2u90hn7f",
+        "type": "http response",
+        "z": "bfd7db6d64b708fd",
+        "name": "",
+        "statusCode": 200,
+        "headers": {},
+        "x": 1650,
+        "y": 440,
+        "wires": []
+    },
+    {
+        "id": "679y3eg65joiv338",
+        "type": "postgreSQLConfig",
+        "z": "bfd7db6d64b708fd",
+        "name": "",
+        "host": "localhost",
+        "hostFieldType": "str",
+        "port": "5432",
+        "portFieldType": "num",
+        "database": "postgres",
+        "databaseFieldType": "str",
+        "ssl": "false",
+        "sslFieldType": "bool",
+        "applicationName": "",
+        "applicationNameType": "str",
+        "max": "10",
+        "maxFieldType": "num",
+        "idle": "1000",
+        "idleFieldType": "num",
+        "connectionTimeout": "10000",
+        "connectionTimeoutFieldType": "num",
+        "user": "admin",
+        "userFieldType": "str",
+        "password": "secret",
+        "passwordFieldType": "str"
+    }
+]
